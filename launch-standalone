@@ -1,6 +1,5 @@
 DOCKER_IP=`ifconfig | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}'`
 docker run -t --rm \
---mount type=bind,source="$(pwd)"/app,destination=/app-dev \
 -e "DATABASE_URL=postgres://mjtwrxddlvnlni:ad0b8eda426c34ddcd5f76c88f453876c747b580cceb83a95e65f2a4b246e6db@ec2-54-83-49-109.compute-1.amazonaws.com:5432/d7c8b5vo0ko0al" \
 -e "SERVICE_TAGS=widget" \
 -e "DOCKER_IP=$DOCKER_IP" \
@@ -14,4 +13,4 @@ docker run -t --rm \
 --name=chronos-edit \
 -p 5000:5000 \
 -p 5001:5001 \
-chronos:edit
+editor:fat
