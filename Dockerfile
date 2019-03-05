@@ -45,28 +45,30 @@ RUN apt-get update && apt-get install -y git \
   && git checkout $lumavate_service_util_branch \
   && rm -rf /python_packages/lumavate_service_util/.git
 
+# Editor port
+EXPOSE 5001
+
+# Editor code
+RUN mkdir -p /editor
+COPY ./app /editor
+COPY ./signer_cli.py /signer_cli.py
+
+ENV APP_SETTINGS config/staging.cfg
+ENV PYTHONPATH /python_packages
+
+
+# Supervisor base configuration
+COPY supervisord.conf /etc/
+
+# Dir for supervisor child configs
+RUN mkdir -p /etc/supervisor/conf.d
 
 # Install python 2 to run supervisor
 RUN mkdir -p /var/log/supervisor
-
-COPY supervisord.conf /etc/
 
 RUN apt-get install python2.7 python-pip -y && \
     pip install --upgrade pip setuptools && \
     rm -r /root/.cache && \
     pip2 install supervisor
 
-# Editor port
-EXPOSE 5001
-
-# Editor code
-RUN mkdir -p /editor
-
-COPY ./app /editor
-
-COPY ./signer_cli.py /signer_cli.py
-
-ENV APP_SETTINGS config/staging.cfg
-ENV PYTHONPATH /python_packages
-
-#CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
