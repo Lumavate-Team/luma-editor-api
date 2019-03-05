@@ -59,12 +59,9 @@ RUN apt-get install python2.7 python-pip -y && \
 # Editor port
 EXPOSE 5001
 
-# App port
-EXPOSE 8080
-
 # Editor code
 RUN mkdir -p /editor
-WORKDIR /editor
+
 COPY ./app /editor
 
 COPY ./signer_cli.py /signer_cli.py
@@ -72,4 +69,4 @@ COPY ./signer_cli.py /signer_cli.py
 ENV APP_SETTINGS config/staging.cfg
 ENV PYTHONPATH /python_packages
 
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+#CMD ["supervisord", "-c", "/etc/supervisord.conf"]

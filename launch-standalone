@@ -6,11 +6,11 @@ docker run -t --rm \
 -e "PUBLIC_KEY=blahblahblah" \
 -e "PRIVATE_KEY=private-key" \
 -e "SERVICE_NAME=chronos" \
--e "WIDGET_URL_PREFIX=/ic/chronos/" \
+-e "WIDGET_URL_PREFIX=/ic/edit/" \
 -e "BASE_URL=does-not-matter" \
 -e "DEV_MODE=true" \
 -e "PROTO=https://" \
---name=chronos-edit \
--p 5000:5000 \
+--name=layout-edit \
+-p 8080:5000 \
 -p 5001:5001 \
-editor:fat
+layout:edit-mode
