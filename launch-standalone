@@ -1,6 +1,5 @@
 DOCKER_IP=`ifconfig | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}'`
-docker run -t --rm \
--e "DATABASE_URL=postgres://mjtwrxddlvnlni:ad0b8eda426c34ddcd5f76c88f453876c747b580cceb83a95e65f2a4b246e6db@ec2-54-83-49-109.compute-1.amazonaws.com:5432/d7c8b5vo0ko0al" \
+docker service create \
 -e "SERVICE_TAGS=widget" \
 -e "DOCKER_IP=$DOCKER_IP" \
 -e "PUBLIC_KEY=blahblahblah" \
@@ -10,7 +9,6 @@ docker run -t --rm \
 -e "BASE_URL=does-not-matter" \
 -e "DEV_MODE=true" \
 -e "PROTO=https://" \
---name=layout-edit \
--p 8080:5000 \
+--name=editor-template \
 -p 5001:5001 \
-layout:edit-mode
+editor:template
