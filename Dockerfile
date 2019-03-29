@@ -48,14 +48,21 @@ RUN apt-get update && apt-get install -y git \
 # Editor port
 EXPOSE 5001
 
+# App port
+EXPOSE 5000
+
 # Editor code
 RUN mkdir -p /editor
-COPY ./app /editor
+COPY ./editor /editor
+COPY ./signer_cli.py /signer_cli.py
+
+# App code
+RUN mkdir -p /app
+COPY ./app /app
 COPY ./signer_cli.py /signer_cli.py
 
 ENV APP_SETTINGS config/staging.cfg
 ENV PYTHONPATH /python_packages
-
 
 # Supervisor base configuration
 COPY supervisord.conf /etc/

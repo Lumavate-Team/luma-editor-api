@@ -5,16 +5,22 @@ import os
 
 class EditorBehavior(RestBehavior):
   def __init__(self):
+    self.root = os.getenv('PROJECT_ROOT', '/app/')
     super().__init__(None)
 
-  def stat(self, path):
+  def validate_path(self, path):
     if not path:
       raise Exception('Invalid path')
 
-    path = path.replace('lumafs://chronos/', '/app/')
-    print(path, flush=True)
+    if not path.startswith(self.root):
+      raise Exception('Invalid path')
 
-    # Need to lock this down to only what's in their 'code' dir
+    return path
+
+  def stat(self, path):
+    self.validate_path(path)
+    path = path.replace('lumafs://chronos/', '/app/')
+
     res = None
     if os.path.isfile(path):
       res = {
@@ -32,15 +38,9 @@ class EditorBehavior(RestBehavior):
     return jsonify(res)
 
   def read(self, path):
-    if not path:
-      raise Exception('Invalid path')
-
+    self.validate_path(path)
     path = path.replace('lumafs://chronos/', '/app/')
-    print('====================', flush=True)
-    print(path, flush=True)
-    print('====================', flush=True)
 
-    # Need to lock this down to only what's in their 'code' dir
     res = None
     if os.path.isfile(path):
       contents = Path(path).read_text()
@@ -76,8 +76,7 @@ class EditorBehavior(RestBehavior):
     return path
 
   def write_file(self, path, content):
-    if not content:
-      raise Exception('Invalid content')
+    self.validate_path(path)
 
     print(content, flush=True)
     if not path:

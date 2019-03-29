@@ -1,5 +1,7 @@
 DOCKER_IP=`ifconfig | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}'`
 docker service create \
+--mount type=bind,src=$(pwd)/editor/,dst=/editor/ \
+--mount type=bind,src=$(pwd)/app/,dst=/app/ \
 -e "SERVICE_TAGS=widget" \
 -e "DOCKER_IP=$DOCKER_IP" \
 -e "PUBLIC_KEY=blahblahblah" \
@@ -9,6 +11,7 @@ docker service create \
 -e "BASE_URL=does-not-matter" \
 -e "DEV_MODE=true" \
 -e "PROTO=https://" \
---name=editor-template \
+--name=hello-world-edit \
+-p 5000:5000 \
 -p 5001:5001 \
-editor:template
+editor:both
