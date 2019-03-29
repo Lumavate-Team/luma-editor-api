@@ -9,6 +9,7 @@ class EditorBehavior(RestBehavior):
     super().__init__(None)
 
   def validate_path(self, path):
+    path = '/{}'.format(path)
     if not path:
       raise Exception('Invalid path')
 
@@ -18,7 +19,7 @@ class EditorBehavior(RestBehavior):
     return path
 
   def stat(self, path):
-    self.validate_path(path)
+    path = self.validate_path(path)
     path = path.replace('lumafs://chronos/', '/app/')
 
     res = None
@@ -38,7 +39,7 @@ class EditorBehavior(RestBehavior):
     return jsonify(res)
 
   def read(self, path):
-    self.validate_path(path)
+    path = self.validate_path(path)
     path = path.replace('lumafs://chronos/', '/app/')
 
     res = None
@@ -76,7 +77,7 @@ class EditorBehavior(RestBehavior):
     return path
 
   def write_file(self, path, content):
-    self.validate_path(path)
+    path = self.validate_path(path)
 
     print(content, flush=True)
     if not path:
