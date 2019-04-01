@@ -5,22 +5,28 @@ import os
 
 class EditorBehavior(RestBehavior):
   def __init__(self):
-    self.root = os.getenv('PROJECT_ROOT', '/app/')
+    self.project_config = {
+        'widget': '/app/',
+        'dep': '/other_path/'
+        }
+
     super().__init__(None)
 
-  def validate_path(self, path):
-    path = '/{}'.format(path)
-    if not path:
+  def get_info(self):
+    return jsonify(self.project_config)
+
+  def validate_path(self, root, path):
+    req_root = self.project_config.get(root)
+    if not req_root:
       raise Exception('Invalid path')
 
-    if not path.startswith(self.root):
-      raise Exception('Invalid path')
+    if path:
+      return '{}{}'.format(req_root, path)
+    else:
+      return req_root
 
-    return path
-
-  def stat(self, path):
-    path = self.validate_path(path)
-    path = path.replace('lumafs://chronos/', '/app/')
+  def stat(self, root, path):
+    path = self.validate_path(root, path)
 
     res = None
     if os.path.isfile(path):
@@ -38,9 +44,8 @@ class EditorBehavior(RestBehavior):
 
     return jsonify(res)
 
-  def read(self, path):
-    path = self.validate_path(path)
-    path = path.replace('lumafs://chronos/', '/app/')
+  def read(self, root, path):
+    path = self.validate_path(root, path)
 
     res = None
     if os.path.isfile(path):
@@ -76,14 +81,10 @@ class EditorBehavior(RestBehavior):
 
     return path
 
-  def write_file(self, path, content):
-    path = self.validate_path(path)
+  def write_file(self, root, path, content):
+    path = self.validate_path(root, path)
 
     print(content, flush=True)
-    if not path:
-      raise Exception('Invalid path')
-
-    path = path.replace('lumafs://chronos/', '/app/')
 
     with open(path, 'w+') as f:
       f.write(content)
