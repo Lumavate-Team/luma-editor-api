@@ -18,12 +18,17 @@ class EditorBehavior(RestBehavior):
   def validate_path(self, root, path):
     req_root = self.project_config.get(root)
     if not req_root:
-      raise Exception('Invalid path')
+      raise Exception('Path does not exsist')
 
     if path:
-      return '{}{}'.format(req_root, path)
+      new_path = '{}{}'.format(req_root, path)
     else:
-      return req_root
+      new_path = req_root
+
+    if not os.path.exists(new_path):
+      raise Exception('Path does not exsist')
+
+    return new_path
 
   def stat(self, root, path):
     path = self.validate_path(root, path)
@@ -32,11 +37,13 @@ class EditorBehavior(RestBehavior):
     if os.path.isfile(path):
       res = {
           "path": path,
+          'root': self.project_config.get(root),
           "type": 1
           }
     elif os.path.isdir(path):
       res = {
           "path": path,
+          'root': self.project_config.get(root),
           "type": 2
           }
     else:
@@ -44,15 +51,16 @@ class EditorBehavior(RestBehavior):
 
     return jsonify(res)
 
-  def read(self, root, path):
-    path = self.validate_path(root, path)
+  def read(self, root, req_path):
+    path = self.validate_path(root, req_path)
 
     res = None
     if os.path.isfile(path):
       contents = Path(path).read_text()
       res = {
-          "path": path,
+          "path": req_path,
           "contents": contents,
+          'root': self.project_config.get(root),
           "type": 1
           }
     elif os.path.isdir(path):
@@ -62,12 +70,12 @@ class EditorBehavior(RestBehavior):
       for entry in dir_contents:
         full_path = '{}{}'.format(self.append_slash(path), entry)
         is_file = os.path.isfile(full_path)
-        translated_path = '{}{}'.format(self.append_slash(path).replace('/app/', 'lumafs://'), entry)
-        contents.append({'name': entry, 'path': translated_path, 'type': 1 if is_file else 2, 'contents': None})
+        contents.append({'name': entry, 'path': self.append_slash(req_path), 'type': 1 if is_file else 2, 'contents': None})
 
       res = {
-          "path": path,
+          "path": self.append_slash(req_path),
           "contents": contents,
+          'root': self.project_config.get(root),
           "type": 2
           }
     else:
@@ -81,12 +89,28 @@ class EditorBehavior(RestBehavior):
 
     return path
 
-  def write_file(self, root, path, content):
+  def create(self, root, path):
+    req_root = self.project_config.get(root)
+    if not req_root:
+      raise Exception('Path does not exsist')
+
+    if path:
+      new_path = '{}{}'.format(req_root, path)
+    else:
+      new_path = req_root
+
+    if os.path.exists(new_path):
+      raise Exception('Path already exsists')
+
+    os.mkdir(new_path)
+
+  def delete(self, root, path):
+    pass
+
+  def write(self, root, path):
     path = self.validate_path(root, path)
 
-    print(content, flush=True)
-
-    with open(path, 'w+') as f:
+    with open(path, 'w') as f:
       f.write(content)
 
     return jsonify('ok')
