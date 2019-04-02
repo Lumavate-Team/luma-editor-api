@@ -1,5 +1,5 @@
 from lumavate_service_util import RestBehavior
-from flask import jsonify, request, g
+from flask import jsonify, request, g, app
 from pathlib import Path
 import shutil
 import os
@@ -43,12 +43,12 @@ class EditorBehavior(RestBehavior):
   def validate_path(self, root, path):
     req_root = self.project_config.get(root)
     if not req_root:
-      raise Exception('Path does not exsist')
+      raise FSException("Root does not exsist", payload={"root": root})
 
     new_path = self.format_real_path(root, path)
 
     if not os.path.exists(new_path):
-      raise Exception('Path does not exsist')
+      raise FSException("Path does not exsist", payload={"path": path})
 
     return new_path
 
@@ -67,7 +67,7 @@ class EditorBehavior(RestBehavior):
           "type": 2
           }
     else:
-      raise Exception('Invalid path')
+      raise FSException("Invalid path", payload={"path": path})
 
     return jsonify(res)
 
@@ -101,23 +101,23 @@ class EditorBehavior(RestBehavior):
           "type": 2
           }
     else:
-      raise Exception('Invalid path')
+      raise FSException("Invalid path", payload={"path": editor_path})
 
     return jsonify(res)
 
   def create(self, root, path):
     req_root = self.project_config.get(root)
     if not req_root:
-      raise Exception('Root path does not exsist')
+      raise FSException("Root does not exsist", payload={"root": root})
 
     # Can't overwite root path
     if not path:
-      raise Exception('Path already exsists')
+      raise FSException("Can't overwrite the root path")
     else:
       new_path = self.format_real_path(root, path)
 
     if os.path.exists(new_path):
-      raise Exception('Path already exsists')
+      raise FSException("Path already exsist", payload={"path": new_path})
 
     try:
       data = self.get_data()
@@ -136,23 +136,43 @@ class EditorBehavior(RestBehavior):
       return self.read(root, path)
 
     except Exception as e:
-      return jsonify({"status": 'failed'})
+      raise FSException("Error creating the file or directory", payload={'type': self.get_data().get('type'), 'path': path, 'exception': str(e)})
 
   def delete(self, root, path):
     self.validate_path(root, path)
     path = self.format_real_path(root, path)
 
-    if os.path.isfile(path):
-      os.remove(path)
-    elif os.path.isdir(path):
-      shutil.rmtree(path)
+    try:
+      if os.path.isfile(path):
+        os.remove(path)
+      elif os.path.isdir(path):
+        shutil.rmtree(path)
 
-    return jsonify('ok')
+      return jsonify('ok')
+    except Exception as e:
+      raise FSException("Error deleting path", payload={'path': path, 'exception': str(e)})
+
 
   def write(self, root, path):
     path = self.validate_path(root, path)
 
-    with open(path, 'w') as f:
-      f.write(content)
+    try:
+      with open(path, 'w') as f:
+        f.write(content)
 
-    return jsonify('ok')
+      return jsonify('ok')
+    except Exception as e:
+      raise FSException("Error writing to path", payload={'path': path, 'exception': str(e)})
+
+
+class FSException(Exception):
+  def __init__(self, message, payload=None):
+    Exception.__init__(self)
+    self.message = message
+    self.payload = payload
+
+  def to_dict(self):
+    rv = dict(self.payload or ())
+    rv['FSError'] = self.message
+    return jsonify(rv)
+

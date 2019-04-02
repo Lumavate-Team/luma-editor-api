@@ -1,4 +1,3 @@
-tailer
 requests
 eventlet
 Flask

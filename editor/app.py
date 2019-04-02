@@ -14,5 +14,9 @@ from routes import *
 app.register_blueprint(icon_blueprint)
 app.register_blueprint(lumavate_blueprint)
 
+import behavior
+app.register_error_handler(behavior.FSException, behavior.FSException.to_dict)
+
+
 if __name__ == '__main__':
   app.run(debug=True, host="0.0.0.0")
