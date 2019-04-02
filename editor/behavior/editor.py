@@ -7,8 +7,8 @@ import os
 class EditorBehavior(RestBehavior):
   def __init__(self, data=None, args=None):
     self.project_config = {
-        'widget': '/app/',
-        'dep': '/other_path/'
+        'app': '/app/',
+        'lumavate_properties': '/python_packages/lumavate_properties/'
         }
 
     super().__init__(None)
@@ -71,7 +71,18 @@ class EditorBehavior(RestBehavior):
 
     return jsonify(res)
 
-  def read(self, root, req_path):
+  def get_project_config(self):
+    res = {}
+    conf = self.project_config
+    for x in conf.keys():
+      res[x] = self.read(x, "", raw=True)
+
+    return res
+
+  def read(self, root, req_path, raw=False):
+    if root == "" and req_path == "":
+      return jsonify(self.get_project_config())
+
     if 'stat' in request.args:
       return self.stat(root, req_path)
 
@@ -103,7 +114,10 @@ class EditorBehavior(RestBehavior):
     else:
       raise FSException("Invalid path", payload={"path": editor_path})
 
-    return jsonify(res)
+    if not raw:
+      return jsonify(res)
+    else:
+      return res
 
   def create(self, root, path):
     req_root = self.project_config.get(root)
