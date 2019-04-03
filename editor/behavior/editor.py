@@ -7,20 +7,41 @@ import os
 class EditorBehavior(RestBehavior):
   def __init__(self, data=None, args=None):
     self.project_config = {
-        'app': '/app/',
-        'lumavate_properties': '/python_packages/lumavate_properties/'
-        }
+      'app': '/app/',
+      'lumavate_properties': '/python_packages/lumavate_properties/'
+    }
 
     super().__init__(None)
 
   def get_info(self):
     return jsonify(self.project_config)
 
+  def set_paths(self, request_root, request_path):
+    real_root = self.project_config.get(request_root)
+    if not real_root:
+      raise FSException("Root does not exist", payload={"root": request_root})
+
+    real_path, editor_path = self.format_paths(request_root, real_root, request_path)
+
+    if not os.path.exists(real_path):
+      raise FSException("Path does not exist", payload={"path": request_path})
+
+    self.real_path = real_path
+    self.editor_path = editor_path
+
   def append_slash(self, path):
     if not path.endswith('/'):
       return path + '/'
 
     return path
+
+  def format_paths(self, req_root, real_root, path):
+    if not req_root.startswith('/'):
+      req_root = '/{}'.format(req_root)
+
+    real_path = '{}{}'.format(self.append_slash(real_root), path)
+    editor_path = '{}{}'.format(self.append_slash(req_root), path)
+    return real_path, editor_path
 
   def format_real_path(self, root, path):
     req_root = self.project_config.get(root)
@@ -32,42 +53,28 @@ class EditorBehavior(RestBehavior):
 
     return new_path
 
-  def format_editor_path(self, root, req_path):
-    editor_path = '{}{}'.format(self.append_slash(root), req_path)
-
-    if os.path.isdir(self.format_real_path(root, req_path)):
-      return self.append_slash(editor_path)
-    else:
-      return editor_path
-
-  def validate_path(self, root, path):
-    req_root = self.project_config.get(root)
-    if not req_root:
-      raise FSException("Root does not exsist", payload={"root": root})
-
-    new_path = self.format_real_path(root, path)
-
-    if not os.path.exists(new_path):
-      raise FSException("Path does not exsist", payload={"path": path})
-
-    return new_path
-
   def stat(self, root, path):
-    path = self.validate_path(root, path)
-
     res = None
-    if os.path.isfile(path):
+    if not root and not path:
       res = {
-          "path": path,
+        'path': '/',
+        'type': 2
+      }
+      return jsonify(res)
+
+    self.set_paths(root, path)
+    if os.path.isfile(self.real_path):
+      res = {
+          "path": self.editor_path,
           "type": 1
           }
-    elif os.path.isdir(path):
+    elif os.path.isdir(self.real_path):
       res = {
-          "path": path,
+          "path": self.editor_path,
           "type": 2
           }
     else:
-      raise FSException("Invalid path", payload={"path": path})
+      raise FSException("Invalid path", payload={"path": self.editor_path})
 
     return jsonify(res)
 
@@ -80,34 +87,46 @@ class EditorBehavior(RestBehavior):
     return res
 
   def read(self, root, req_path, raw=False):
-    if root == "" and req_path == "":
-      return jsonify(self.get_project_config())
-
     if 'stat' in request.args:
       return self.stat(root, req_path)
 
-    path = self.validate_path(root, req_path)
-    editor_path = self.format_editor_path(root, req_path)
-
     res = None
-    if os.path.isfile(path):
-      contents = Path(path).read_text()
+    if not root and not req_path:
+      contents = []
+      for k in self.project_config.keys():
+        contents.append({
+          'path': '/' + k,
+          'type': 2,
+          'name': k
+        })
+
       res = {
-          "path": editor_path,
+        "path": '/',
+        "contents": contents,
+        "type": 2
+      }
+
+      return jsonify(res)
+
+    self.set_paths(root, req_path)
+    if os.path.isfile(self.real_path):
+      contents = Path(self.real_path).read_text()
+      res = {
+          "path": self.editor_path,
           "contents": contents,
           "type": 1
           }
-    elif os.path.isdir(path):
-      dir_contents = os.listdir(path)
+    elif os.path.isdir(self.real_path):
+      dir_contents = os.listdir(self.real_path)
       contents = []
 
       for entry in dir_contents:
-        full_path = '{}{}'.format(editor_path, entry)
-        is_file = os.path.isfile(full_path)
-        contents.append({'name': entry, 'path': full_path, 'type': 1 if is_file else 2, 'contents': None})
+        editor_full_path = '{}{}'.format(self.append_slash(self.editor_path), entry)
+        is_file = os.path.isfile('{}{}'.format(self.append_slash(self.real_path), entry))
+        contents.append({'name': entry, 'path': editor_full_path, 'type': 1 if is_file else 2, 'contents': None})
 
       res = {
-          "path": editor_path,
+          "path": self.editor_path,
           "contents": contents,
           "type": 2
           }
@@ -120,32 +139,28 @@ class EditorBehavior(RestBehavior):
       return res
 
   def create(self, root, path):
-    req_root = self.project_config.get(root)
-    if not req_root:
-      raise FSException("Root does not exsist", payload={"root": root})
+    self.set_paths(root, path)
 
     # Can't overwite root path
     if not path:
       raise FSException("Can't overwrite the root path")
-    else:
-      new_path = self.format_real_path(root, path)
 
-    if os.path.exists(new_path):
-      raise FSException("Path already exsist", payload={"path": new_path})
+    if os.path.exists(self.real_path):
+      raise FSException("Path already exsist", payload={"path": self.editor_path})
 
     try:
       data = self.get_data()
       if data.get('type') == 'directory':
-        os.makedirs(new_path)
+        os.makedirs(self.real_path)
       elif data.get('type') == 'file':
         file_name = path.split('/')[-1]
         file_path = '/'.join(path.split('/')[:-1])
 
         if not os.path.exists(self.format_real_path(root, file_path)):
           os.makedirs(self.format_real_path(root, file_path))
-          open(new_path, 'a').close()
+          open(self.real_path, 'a').close()
         else:
-          open(new_path, 'a').close()
+          open(self.real_path, 'a').close()
 
       return self.read(root, path)
 
@@ -153,30 +168,29 @@ class EditorBehavior(RestBehavior):
       raise FSException("Error creating the file or directory", payload={'type': self.get_data().get('type'), 'path': path, 'exception': str(e)})
 
   def delete(self, root, path):
-    self.validate_path(root, path)
-    path = self.format_real_path(root, path)
+    self.set_paths(root, path)
 
     try:
-      if os.path.isfile(path):
-        os.remove(path)
-      elif os.path.isdir(path):
-        shutil.rmtree(path)
+      if os.path.isfile(self.real_path):
+        os.remove(self.real_path)
+      elif os.path.isdir(self.real_path):
+        shutil.rmtree(self.real_path)
 
       return jsonify('ok')
     except Exception as e:
-      raise FSException("Error deleting path", payload={'path': path, 'exception': str(e)})
+      raise FSException("Error deleting path", payload={'path': self.editor_path, 'exception': str(e)})
 
 
   def write(self, root, path):
-    path = self.validate_path(root, path)
+    self.set_paths(root, path)
 
     try:
-      with open(path, 'w') as f:
+      with open(self.real_path, 'w') as f:
         f.write(content)
 
       return jsonify('ok')
     except Exception as e:
-      raise FSException("Error writing to path", payload={'path': path, 'exception': str(e)})
+      raise FSException("Error writing to path", payload={'path': self.editor_path, 'exception': str(e)})
 
 
 class FSException(Exception):
