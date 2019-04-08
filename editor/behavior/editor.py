@@ -16,14 +16,14 @@ class EditorBehavior(RestBehavior):
   def get_info(self):
     return jsonify(self.project_config)
 
-  def set_paths(self, request_root, request_path):
+  def set_paths(self, request_root, request_path, validate_real_path=True):
     real_root = self.project_config.get(request_root)
     if not real_root:
       raise FSException("Root does not exist", payload={"root": request_root})
 
     real_path, editor_path = self.format_paths(request_root, real_root, request_path)
 
-    if not os.path.exists(real_path):
+    if validate_real_path and not os.path.exists(real_path):
       raise FSException("Path does not exist", payload={"path": request_path})
 
     self.real_path = real_path
@@ -139,7 +139,7 @@ class EditorBehavior(RestBehavior):
       return res
 
   def create(self, root, path):
-    self.set_paths(root, path)
+    self.set_paths(root, path, validate_real_path=False)
 
     # Can't overwite root path
     if not path:
@@ -182,7 +182,16 @@ class EditorBehavior(RestBehavior):
 
 
   def write(self, root, path):
-    self.set_paths(root, path)
+    self.set_paths(root, path, validate_real_path=False)
+
+    try:
+      content = request.get_json().get('content')
+      # Allow empty content, just not None content
+      if content is None:
+        raise FSException("'content' is required", payload={'path': self.editor_path, 'exception': str(e)})
+
+    except Exception as e:
+      raise FSException("Error parsing request content", payload={'path': self.editor_path, 'exception': str(e)})
 
     try:
       with open(self.real_path, 'w') as f:
@@ -194,13 +203,14 @@ class EditorBehavior(RestBehavior):
 
 
 class FSException(Exception):
-  def __init__(self, message, payload=None):
+  def __init__(self, message, payload=None, status_code=400):
     Exception.__init__(self)
     self.message = message
     self.payload = payload
+    self.status_code = status_code
 
   def to_dict(self):
     rv = dict(self.payload or ())
     rv['FSError'] = self.message
-    return jsonify(rv)
+    return jsonify(rv), self.status_code
 
