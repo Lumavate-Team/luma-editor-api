@@ -3,6 +3,7 @@ from flask import jsonify, request, g, app
 from pathlib import Path
 import shutil
 import os
+import re
 
 class EditorBehavior(RestBehavior):
   def __init__(self, data=None, args=None):
@@ -143,10 +144,17 @@ class EditorBehavior(RestBehavior):
 
     # Can't overwite root path
     if not path:
-      raise FSException("Can't overwrite the root path")
+      raise FSException("Can't overwrite or rename the root path")
 
+    # Determine if this is a "move" request or a "create"
+    action = request.args.get('action')
+    dest = request.args.get('dest')
+    if action and dest and action == 'move':
+      return self.move(root, path, dest)
+
+    # This is a "create" request
     if os.path.exists(self.real_path):
-      raise FSException("Path already exsist", payload={"path": self.editor_path})
+      raise FSException("Path already exists", payload={"path": self.editor_path})
 
     try:
       data = self.get_data()
@@ -180,6 +188,40 @@ class EditorBehavior(RestBehavior):
     except Exception as e:
       raise FSException("Error deleting path", payload={'path': self.editor_path, 'exception': str(e)})
 
+  def move(self, request_root, old_path, new_path):
+    try:
+      real_root = self.project_config.get(request_root)
+      if not real_root:
+        raise FSException("Root does not exist", payload={"root": request_root})
+
+      real_old_path, editor_old_path = self.format_paths(request_root, real_root, old_path)
+
+      # new_path should begin with the project root. Parse that out and make sure
+      # it matches the request_root
+      match = re.search('^\/(?P<root>[^\/]+)(?P<path>.*)', new_path)
+      if not match:
+        raise FSException("New path isn't a valid path format", payload={'path': new_path})
+
+      new_path_root = match.group('root')
+      if new_path_root != request_root:
+        raise FSException("Destination path root '{}' doesn't match the request root '{}'".format(new_path_root, request_root), payload={'path': new_path})
+
+      # Replace the first occurrence of the root in the new path
+      new_path = new_path.replace('/{}/'.format(new_path_root), '', 1)
+
+      real_new_path, editor_new_path = self.format_paths(request_root, real_root, new_path)
+
+      if not os.path.exists(real_old_path):
+        raise FSException("Path does not exist", payload={"path": editor_old_path})
+
+      shutil.move(real_old_path, real_new_path)
+
+      return jsonify('ok')
+    except Exception as e:
+      if isinstance(e, FSException):
+        raise
+
+      raise FSException("Error moving path", payload={'path': editor_old_path, 'exception': str(e)})
 
   def write(self, root, path):
     self.set_paths(root, path, validate_real_path=False)
