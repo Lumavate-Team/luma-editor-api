@@ -42,7 +42,9 @@ RUN apt-get update && apt-get install -y git \
   && git checkout $lumavate_properties_branch \
   && rm -rf /python_packages/lumavate_properties/.git \
   && git clone https://github.com/Lumavate-Team/python-service-util.git lumavate_service_util \
+  && cd lumavate_service_util \
   && git checkout $lumavate_service_util_branch \
+  && cd ../ \
   && rm -rf /python_packages/lumavate_service_util/.git
 
 # Editor port
@@ -70,12 +72,8 @@ COPY supervisord.conf /etc/
 # Dir for supervisor child configs
 RUN mkdir -p /etc/supervisor/conf.d
 
-# Install python 2 to run supervisor
 RUN mkdir -p /var/log/supervisor
 
-RUN apt-get install python2.7 python-pip -y && \
-    pip install --upgrade pip setuptools && \
-    rm -r /root/.cache && \
-    pip2 install supervisor
+RUN pip3 install supervisor==4.0.1
 
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]

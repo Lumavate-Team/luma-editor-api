@@ -2,8 +2,21 @@ from lumavate_service_util import lumavate_route, RequestType, SecurityType, lum
 from flask import Blueprint, request, Response
 import behavior
 
-hello_world_blueprint = Blueprint("hello_world_blueprint", __name__)
 
-@lumavate_blueprint.route('/hello-world/data', methods=['GET'])
+@lumavate_route('/hello-world/data', ['GET'], RequestType.api, [SecurityType.jwt])
 def read():
+  return behavior.HelloWorldBehavior().get_data()
+
+
+@lumavate_route('/new/route', ['GET'], RequestType.api, [SecurityType.jwt])
+def new():
+  print("hello", flush=True)
+  return behavior.HelloWorldBehavior().get_data()
+
+@lumavate_route('/newer/route', ['GET'], RequestType.api, [SecurityType.jwt])
+def newer():
+  return behavior.HelloWorldBehavior().get_data()
+
+@lumavate_route('/third/route', ['GET'], RequestType.api, [SecurityType.jwt])
+def third():
   return behavior.HelloWorldBehavior().get_data()
