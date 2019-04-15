@@ -1,17 +1,7 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 as common
 
 RUN apt-get update --fix-missing \
-  && apt-get install -y wget git \
-  && apt-get install -y python3-pip python3-dev \
-  && cd /usr/local/bin \
-  && ln -s /usr/bin/python3 python \
-  && pip3 install --upgrade pip
-
-RUN apt-get install -y libpq-dev --fix-missing
-RUN apt-get install -y libffi-dev
-
-COPY requirements.txt ./
-RUN python3 -m pip install -r requirements.txt
+  && apt-get install -y wget git
 
 COPY .git .git
 
@@ -47,21 +37,43 @@ RUN apt-get update && apt-get install -y git \
   && cd ../ \
   && rm -rf /python_packages/lumavate_service_util/.git
 
+FROM python:3.7.0-alpine
+
 # Editor port
 EXPOSE 5001
 
 # App port
 EXPOSE 5000
 
+COPY --from=common /python_packages ./python_packages/
+COPY requirements.txt ./
+
+RUN apk add --no-cache \
+    postgresql-libs \
+  && apk add --no-cache --virtual .build-deps \
+    gcc \
+    git \
+    libc-dev \
+    libgcc \
+    linux-headers \
+    libffi-dev \
+    libressl-dev \
+    curl \
+    musl-dev \
+    postgresql-dev \
+  && pip3 install -r requirements.txt \
+  && rm -rf .git \
+  && mkdir -p /app \
+  && apk del .build-deps
+
+
 # Editor code
 RUN mkdir -p /editor
 COPY ./editor /editor
-COPY ./signer_cli.py /signer_cli.py
 
 # App code
 RUN mkdir -p /app
 COPY ./app /app
-COPY ./signer_cli.py /signer_cli.py
 
 ENV APP_SETTINGS config/staging.cfg
 ENV PYTHONPATH /python_packages
@@ -70,10 +82,9 @@ ENV PYTHONPATH /python_packages
 COPY supervisord.conf /etc/
 
 # Dir for supervisor child configs
-RUN mkdir -p /etc/supervisor/conf.d
+#RUN mkdir -p /etc/supervisor/conf.d
 
-RUN mkdir -p /var/log/supervisor
-
-RUN pip3 install supervisor==4.0.1
+# Dir for supervisor & child logs
+RUN mkdir -p /logs
 
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]

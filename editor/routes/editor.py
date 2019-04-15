@@ -1,5 +1,5 @@
-from lumavate_service_util import lumavate_blueprint
-from flask import Blueprint, request
+from lumavate_service_util import lumavate_blueprint, lumavate_route, SecurityType, RequestType
+from flask import Blueprint, request, Response
 import behavior
 
 editor_blueprint = Blueprint("editor_blueprint", __name__)
@@ -17,3 +17,21 @@ def editor_core(ic, wt, root, path):
       }
 
   return methods[request.method](root, path)
+
+
+@lumavate_blueprint.route('/<string:ic>/<string:wt>/luma-editor/logs', methods=['GET'])
+def logs(ic, wt):
+  return Response(follow(), mimetype='text/plain')
+
+def follow():
+  with open('/logs/app.log', 'r') as file:
+    line = ''
+    while True:
+      tmp = file.readline()
+      if tmp is not None:
+        line += tmp
+        if line.endswith("\n"):
+          yield line
+          line = ''
+      else:
+        time.sleep(0.1)

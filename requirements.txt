@@ -5,6 +5,7 @@ Flask-Redis
 greenlet
 gunicorn
 itsdangerous
+supervisor==4.0.1
 Jinja2
 blinker
 rollbar
