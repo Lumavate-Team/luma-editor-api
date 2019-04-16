@@ -1,7 +1,0 @@
-docker service update \
- --detach \
- --with-registry-auth \
- --mount-add type=bind,source="$(pwd)"/app,destination=/app \
- --mount-add type=bind,source="$(pwd)"/editor,destination=/editor \
- --mount-add type=bind,source="$(pwd)"/../python-service-util,destination=/python_packages/lumavate_service_util \
-editapi-438
