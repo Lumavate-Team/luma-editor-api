@@ -1,5 +1,5 @@
 from flask import Blueprint, request, Response
-import behavior
+from behavior import EditorBehavior
 import time
 
 editor_blueprint = Blueprint("editor_blueprint", __name__)
@@ -8,7 +8,7 @@ editor_blueprint = Blueprint("editor_blueprint", __name__)
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/fs/<string:root>', defaults={'path': ''}, methods=['GET', 'PUT', 'POST', 'DELETE'])
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/fs/<string:root>/<path:path>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 def editor_core(ic, wt, root, path):
-  b = behavior.EditorBehavior()
+  b = EditorBehavior()
   methods = {
       'GET': b.read,
       'PUT': b.write,

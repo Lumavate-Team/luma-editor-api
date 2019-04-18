@@ -1,1 +1,1 @@
-from .editor import *
+from .editor import editor_blueprint

@@ -76,6 +76,7 @@ RUN mkdir -p /app
 COPY ./app /app
 
 ENV APP_SETTINGS config/staging.cfg
+ENV EDITOR_SETTINGS config/python_app.cfg
 ENV PYTHONPATH /python_packages
 
 # Supervisor base configuration

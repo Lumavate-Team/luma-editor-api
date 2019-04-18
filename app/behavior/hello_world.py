@@ -1,7 +1,5 @@
 from lumavate_service_util import RestBehavior
-from flask import jsonify, request, g
-from pathlib import Path
-import os
+from flask import jsonify
 
 class HelloWorldBehavior(RestBehavior):
   def __init__(self):
