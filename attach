@@ -1,6 +1,0 @@
-docker service update \
- --detach \
- --with-registry-auth \
- --mount-add type=bind,source="$(pwd)"/app,destination=/app \
- --mount-add type=bind,source="$(pwd)"/editor,destination=/editor \
-editapi-438
