@@ -7,9 +7,4 @@ def create_app(options=None):
     app.config['SQLALCHEMY_DATABASE_URI'] = ''
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # apply any configuration override options
-    if options is not None:
-      for key, value in options.items():
-        app.config[key] = value
-
     return app

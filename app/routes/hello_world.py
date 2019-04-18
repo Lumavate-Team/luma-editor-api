@@ -7,7 +7,6 @@ import behavior
 def read():
   return behavior.HelloWorldBehavior().get_data()
 
-
 @lumavate_route('/new/route', ['GET'], RequestType.api, [SecurityType.jwt])
 def new():
   print("hello", flush=True)
