@@ -1,15 +1,7 @@
-from flask import Flask, jsonify, send_from_directory, g
-import os
+from flask import Flask
 
-def create_app(options=None):
+def create_app():
     app = Flask(__name__)
-    app.config.from_envvar('APP_SETTINGS')
-    app.config['SQLALCHEMY_DATABASE_URI'] = ''
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    # apply any configuration override options
-    if options is not None:
-      for key, value in options.items():
-        app.config[key] = value
+    app.config.from_envvar('EDITOR_SETTINGS')
 
     return app

@@ -1,0 +1,5 @@
+requests
+eventlet
+Flask
+gunicorn
+supervisor==4.0.1

@@ -1,18 +1,22 @@
-from lumavate_service_util import RestBehavior
-from flask import jsonify, request, g, app
+from flask import jsonify, request
 from pathlib import Path
+from app import app
 import shutil
 import os
 import re
 
-class EditorBehavior(RestBehavior):
+class EditorBehavior():
   def __init__(self, data=None, args=None):
-    self.project_config = {
-      'app': '/app/',
-      'lumavate_properties': '/python_packages/lumavate_properties/'
-    }
+    self.project_config = app.config['DIR_STRUCT']
 
-    super().__init__(None)
+  def get_data(self, override_data=None):
+    if override_data:
+      return override_data
+
+    if self.data:
+      return self.data
+
+    return request.get_json(force=True)
 
   def get_info(self):
     return jsonify(self.project_config)
