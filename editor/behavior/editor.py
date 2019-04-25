@@ -24,12 +24,12 @@ class EditorBehavior():
   def set_paths(self, request_root, request_path, validate_real_path=True):
     real_root = self.project_config.get(request_root)
     if not real_root:
-      raise FSException("Root does not exist", payload={"root": request_root})
+      raise NotFoundException("Root does not exist", payload={"root": request_root})
 
     real_path, editor_path = self.format_paths(request_root, real_root, request_path)
 
     if validate_real_path and not os.path.exists(real_path):
-      raise FSException("Path does not exist", payload={"path": request_path})
+      raise NotFoundException("Path does not exist", payload={"path": request_path})
 
     self.real_path = real_path
     self.editor_path = editor_path
@@ -79,7 +79,7 @@ class EditorBehavior():
           "type": 2
           }
     else:
-      raise FSException("Invalid path", payload={"path": self.editor_path})
+      raise NotFoundException("Invalid path", payload={"path": self.editor_path})
 
     return jsonify(res)
 
@@ -136,7 +136,7 @@ class EditorBehavior():
           "type": 2
           }
     else:
-      raise FSException("Invalid path", payload={"path": editor_path})
+      raise NotFoundException("Invalid path", payload={"path": editor_path})
 
     if not raw:
       return jsonify(res)
@@ -148,7 +148,7 @@ class EditorBehavior():
 
     # Can't overwite root path
     if not path:
-      raise FSException("Can't overwrite or rename the root path")
+      raise ValidationException("Can't overwrite or rename the root path")
 
     # Determine if this is a "move" request or a "create"
     action = request.args.get('action')
@@ -158,10 +158,15 @@ class EditorBehavior():
 
     # This is a "create" request
     if os.path.exists(self.real_path):
-      raise FSException("Path already exists", payload={"path": self.editor_path})
+      raise ValidationException("Path already exists", payload={"path": self.editor_path})
 
     try:
-      data = self.get_data()
+      # Try to parse the request data
+      self.data = self.get_data()
+    except Exception as e:
+      raise ValidationException("Failed to parse request body as JSON", payload={'path': path, 'exception': str(e)})
+
+    try:
       if data.get('type') == 'directory':
         os.makedirs(self.real_path)
       elif data.get('type') == 'file':
@@ -177,7 +182,7 @@ class EditorBehavior():
       return self.read(root, path)
 
     except Exception as e:
-      raise FSException("Error creating the file or directory", payload={'type': self.get_data().get('type'), 'path': path, 'exception': str(e)})
+      raise FSException("Error creating the file or directory", payload={'type': self.data.get('type'), 'path': path, 'exception': str(e)})
 
   def delete(self, root, path):
     self.set_paths(root, path)
@@ -196,7 +201,7 @@ class EditorBehavior():
     try:
       real_root = self.project_config.get(request_root)
       if not real_root:
-        raise FSException("Root does not exist", payload={"root": request_root})
+        raise NotFoundException("Root does not exist", payload={"root": request_root})
 
       real_old_path, editor_old_path = self.format_paths(request_root, real_root, old_path)
 
@@ -204,11 +209,11 @@ class EditorBehavior():
       # it matches the request_root
       match = re.search('^\/(?P<root>[^\/]+)(?P<path>.*)', new_path)
       if not match:
-        raise FSException("New path isn't a valid path format", payload={'path': new_path})
+        raise ValidationException("New path isn't a valid path format", payload={'path': new_path})
 
       new_path_root = match.group('root')
       if new_path_root != request_root:
-        raise FSException("Destination path root '{}' doesn't match the request root '{}'".format(new_path_root, request_root), payload={'path': new_path})
+        raise ValidationException("Destination path root '{}' doesn't match the request root '{}'".format(new_path_root, request_root), payload={'path': new_path})
 
       # Replace the first occurrence of the root in the new path
       new_path = new_path.replace('/{}/'.format(new_path_root), '', 1)
@@ -216,7 +221,7 @@ class EditorBehavior():
       real_new_path, editor_new_path = self.format_paths(request_root, real_root, new_path)
 
       if not os.path.exists(real_old_path):
-        raise FSException("Path does not exist", payload={"path": editor_old_path})
+        raise NotFoundException("Path does not exist", payload={"path": editor_old_path})
 
       shutil.move(real_old_path, real_new_path)
 
@@ -234,10 +239,10 @@ class EditorBehavior():
       content = request.get_json().get('content')
       # Allow empty content, just not None content
       if content is None:
-        raise FSException("'content' is required", payload={'path': self.editor_path, 'exception': str(e)})
+        raise ValidationException("'content' is required", payload={'path': self.editor_path, 'exception': str(e)})
 
     except Exception as e:
-      raise FSException("Error parsing request content", payload={'path': self.editor_path, 'exception': str(e)})
+      raise ValidationException("Error parsing request content", payload={'path': self.editor_path, 'exception': str(e)})
 
     try:
       with open(self.real_path, 'w') as f:
@@ -249,7 +254,7 @@ class EditorBehavior():
 
 
 class FSException(Exception):
-  def __init__(self, message, payload=None, status_code=400):
+  def __init__(self, message, payload=None, status_code=500):
     Exception.__init__(self)
     self.message = message
     self.payload = payload
@@ -257,6 +262,13 @@ class FSException(Exception):
 
   def to_dict(self):
     rv = dict(self.payload or ())
-    rv['FSError'] = self.message
+    rv.update({'error': self.message})
     return jsonify(rv), self.status_code
 
+class NotFoundException(FSException):
+  def __init__(self, message, payload=None):
+    FSException.__init__(self, message, payload, 404)
+
+class ValidationException(FSException):
+  def __init__(self, message, payload=None):
+    FSException.__init__(self, message, payload, 400)
