@@ -24,7 +24,7 @@ COPY ./editor /editor
 ENV EDITOR_SETTINGS config/python_app.cfg
 
 # Supervisor base configuration
-COPY supervisord.conf /etc/
+COPY supervisord.conf /etc/supervisor/
 
 # Dir for supervisor child configs
 RUN mkdir -p /etc/supervisor/conf.d
