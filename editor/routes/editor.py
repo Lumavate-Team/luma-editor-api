@@ -1,5 +1,5 @@
 from flask import Blueprint, request, Response
-from behavior import EditorBehavior
+from behavior import EditorBehavior, PackageBehavior
 import time
 
 editor_blueprint = Blueprint("editor_blueprint", __name__)
@@ -17,6 +17,15 @@ def editor_core(ic, wt, root, path):
       }
 
   return methods[request.method](root, path)
+
+@editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/package', methods=['POST', 'GET'])
+def project_packages(ic, wt):
+  b = PackageBehavior()
+  if request.method == 'POST':
+    return b.package_install()
+
+  if request.method == 'GET':
+    return b.get_packages()
 
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/logs', methods=['GET'])
 def logs(ic, wt):

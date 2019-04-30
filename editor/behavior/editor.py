@@ -7,7 +7,7 @@ import re
 
 class EditorBehavior():
   def __init__(self, data=None, args=None):
-    self.project_config = app.config['DIR_STRUCT']
+    self.project_config = app.config['PROJ_STRUCT']
 
   def get_data(self, override_data=None):
     if override_data:

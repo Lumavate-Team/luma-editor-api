@@ -21,8 +21,6 @@ RUN apk add --no-cache --virtual .build-deps \
 # Editor code
 COPY ./editor /editor
 
-ENV EDITOR_SETTINGS=config/python_app.cfg
-
 # Supervisor base configuration
 COPY supervisord.conf /etc/supervisor/
 
