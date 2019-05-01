@@ -39,6 +39,7 @@ def create_app():
       if not os.path.isdir(config_dir):
         os.mkdir(config_dir)
 
+      # TODO: Should change this to always fill out the missing info we know
       # Grab config info from config.json
       # Create the config.json if it's not there or it's empty
       config_path = '{}/config.json'.format(config_dir)

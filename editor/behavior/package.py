@@ -98,3 +98,6 @@ class PackageBehavior():
 
     return installed_packages
 
+  def restart_process(self):
+    res = subprocess.run(['supervisorctl', 'restart', 'app'], capture_output=True, encoding='utf-8')
+    return jsonify(res.stdout.split('\n'))

@@ -27,6 +27,11 @@ def project_packages(ic, wt):
   if request.method == 'GET':
     return b.get_packages()
 
+@editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/restart/app', methods=['POST'])
+def restart_process(ic, wt):
+  b = PackageBehavior()
+  return b.restart_process()
+
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/logs', methods=['GET'])
 def logs(ic, wt):
   resp = Response(follow(), mimetype='text/plain')
