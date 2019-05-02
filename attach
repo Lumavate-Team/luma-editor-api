@@ -2,4 +2,4 @@ docker service update \
  --detach \
  --with-registry-auth \
  --mount-add type=bind,source="$(pwd)"/editor,destination=/editor \
- layout-widget
+ ims-472

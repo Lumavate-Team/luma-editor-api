@@ -2,12 +2,17 @@ from flask import jsonify, request
 from pathlib import Path
 from app import app
 import shutil
+import time
 import os
 import re
 
 class EditorBehavior():
   def __init__(self, data=None, args=None):
     self.project_config = app.config['PROJ_STRUCT']
+
+    self.proj_lang = app.config['PROJ_LANG']
+    self.config_dir = app.config['CONFIG_DIR']
+    self.package_path = '{}/installed_packages.json'.format(self.config_dir)
 
   def get_data(self, override_data=None):
     if override_data:
@@ -252,6 +257,11 @@ class EditorBehavior():
     except Exception as e:
       raise FSException("Error writing to path", payload={'path': self.editor_path, 'exception': str(e)})
 
+  def download_src(self):
+    if self.proj_lang == 'go':
+      shutil.make_archive('/editor/application_src', 'zip', base_dir='/go/src')
+    else:
+      shutil.make_archive('/editor/application_src', 'zip', base_dir='/app')
 
 class FSException(Exception):
   def __init__(self, message, payload=None, status_code=500):

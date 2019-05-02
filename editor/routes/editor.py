@@ -1,4 +1,4 @@
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response, send_file
 from behavior import EditorBehavior, PackageBehavior
 import time
 
@@ -17,6 +17,11 @@ def editor_core(ic, wt, root, path):
       }
 
   return methods[request.method](root, path)
+
+@editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/download/application.zip', methods=['GET'])
+def download_src(ic, wt):
+  b = EditorBehavior().download_src()
+  return send_file('/editor/application_src.zip', attachment_filename='application.zip', as_attachment=True)
 
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/package', methods=['POST', 'GET'])
 def project_packages(ic, wt):
