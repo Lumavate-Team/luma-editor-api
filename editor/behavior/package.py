@@ -1,4 +1,5 @@
 from flask import jsonify, request
+from behavior import FSException
 from app import app
 import subprocess
 import json
@@ -47,7 +48,11 @@ class PackageBehavior():
     # Loop thorugh packages in data and try to install each one
     result = {'installed': [], 'failed': []}
     for package in data.get('packages'):
-      res = self.pip_install(package)
+      if self.proj_lang == 'go':
+        res = self.go_get(package)
+      else:
+        res = self.pip_install(package)
+
       if 'installed' in res.keys():
         result['installed'].append(package)
       else:
@@ -82,11 +87,30 @@ class PackageBehavior():
       return {'installed': package_name}
 
     except subprocess.CalledProcessError as e:
-      return {'failed': {'name': package_name, 'error': e.stderr}}
+      raise FSException('Error installing pip package')
+
+  def go_get(self, package):
+    package_name = package.get('name')
+    try:
+      res = subprocess.run(['go', 'get', package_name], encoding='UTF-8', check=True)
+      return {'installed': package_name}
+
+    except subprocess.CalledProcessError as e:
+      raise FSException('Error installing go package')
 
   def populate_package_json(self):
-    res = subprocess.run(['pip', 'list', '--format', 'json'], capture_output=True, encoding='UTF-8')
-    package_list = ast.literal_eval(res.stdout)
+    if self.proj_lang == 'go':
+      res = subprocess.check_output(['ls', '/go/src/github.com/'], encoding='utf-8')
+      packages = res.split('\n')
+      package_list = []
+      for x in packages:
+        if x:
+          pk = {'name': x}
+          package_list.append(pk)
+
+    else:
+      res = subprocess.run(['pip', 'list', '--format', 'json'], capture_output=True, encoding='UTF-8')
+      package_list = ast.literal_eval(res.stdout)
 
     installed_packages = {
         "userInstalled": [],

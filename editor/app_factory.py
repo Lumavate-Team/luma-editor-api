@@ -15,7 +15,7 @@ def create_app():
           raise Exception("The editor currently supports 'python' and 'go'")
       else:
         try:
-          res = subprocess.run(['go'], check=True)
+          res = subprocess.run(['go', 'version'], check=True)
           # Go is installed so it's probably a go widget
           lang = 'go'
         except:
@@ -60,14 +60,11 @@ def create_app():
         # If the config file doesn't define the proj struct then use the default
         proj_struct = {"app": root}
 
-      proj_lang = config_json.get('language')
-      if not proj_lang:
-        # If the config file doesn't define the proj lang then make sure to add it
-        proj_lang = lang
-
       app.config['PROJ_STRUCT'] = proj_struct
       app.config['CONFIG_DIR'] = config_dir
-      app.config['PROJ_LANG'] = proj_lang
+
+      # Always set lang to what the editor thinks it is for right now
+      app.config['PROJ_LANG'] = lang
 
     init_config()
     return app
