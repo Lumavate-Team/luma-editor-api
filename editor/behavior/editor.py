@@ -5,6 +5,7 @@ import shutil
 import time
 import os
 import re
+import base64
 
 class EditorBehavior():
   def __init__(self, data=None, args=None):
@@ -122,7 +123,7 @@ class EditorBehavior():
 
     self.set_paths(root, req_path)
     if os.path.isfile(self.real_path):
-      contents = Path(self.real_path).read_text()
+      contents = base64.b64encode(Path(self.real_path).read_bytes()).decode('utf-8')
       res = {
           "path": self.editor_path,
           "contents": contents,
