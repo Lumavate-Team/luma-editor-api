@@ -13,6 +13,8 @@ class EditorBehavior():
     self.proj_lang = app.config['PROJ_LANG']
     self.config_dir = app.config['CONFIG_DIR']
     self.package_path = '{}/installed_packages.json'.format(self.config_dir)
+    self.data = data
+    self.args = args
 
   def get_data(self, override_data=None):
     if override_data:
@@ -172,9 +174,9 @@ class EditorBehavior():
       raise ValidationException("Failed to parse request body as JSON", payload={'path': path, 'exception': str(e)})
 
     try:
-      if data.get('type') == 'directory':
+      if self.data.get('type') == 'directory':
         os.makedirs(self.real_path)
-      elif data.get('type') == 'file':
+      elif self.data.get('type') == 'file':
         file_name = path.split('/')[-1]
         file_path = '/'.join(path.split('/')[:-1])
 
