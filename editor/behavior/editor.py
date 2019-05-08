@@ -249,15 +249,19 @@ class EditorBehavior():
       if content is None:
         raise ValidationException("'content' is required", payload={'path': self.editor_path, 'exception': str(e)})
 
+      content = base64.b64decode(content.encode('utf-8'))
+
     except Exception as e:
       raise ValidationException("Error parsing request content", payload={'path': self.editor_path, 'exception': str(e)})
 
     try:
-      with open(self.real_path, 'w') as f:
+      with open(self.real_path, 'wb') as f:
         f.write(content)
 
       return jsonify('ok')
     except Exception as e:
+      if os.path.exists(self.real_path):
+        os.remove(self.real_path)
       raise FSException("Error writing to path", payload={'path': self.editor_path, 'exception': str(e)})
 
   def download_src(self):
