@@ -1,5 +1,5 @@
 from flask import Blueprint, request, Response, send_file
-from behavior import EditorBehavior, PackageBehavior
+from behavior import EditorBehavior, PackageBehavior, FSException
 import time
 
 editor_blueprint = Blueprint("editor_blueprint", __name__)
@@ -39,11 +39,19 @@ def restart_process(ic, wt):
 
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/logs', methods=['GET'])
 def logs(ic, wt):
-  resp = Response(follow(), mimetype='text/plain')
+  tail_length = request.args.get('tail')
+  resp = Response(follow(tail_length), mimetype='text/plain')
   resp.headers['X-Accel-Buffering'] = 'no'
   return resp
 
-def follow():
+def follow(tail):
+  if not tail:
+    tail = 100
+  try:
+    tail_length = int(f'-{tail}')
+  except:
+    raise FSException("'tail' arg must be an int")
+
   with open('/logs/app.log', 'r') as file:
     line = ''
     ct = 0
@@ -54,12 +62,14 @@ def follow():
         ct = 0
         yield " "
 
-      tmp = file.readline()
-      if tmp is not None:
-        line += tmp
-        if line.endswith("\n"):
-          yield line
-          line = ''
-          ct = 0
-      else:
-        time.sleep(0.1)
+      lines = file.readlines()
+      tail = lines[tail_length:]
+      for tmp in tail:
+        if tmp is not None:
+          line += tmp
+          if line.endswith("\n"):
+            yield line
+            line = ''
+            ct = 0
+        else:
+          time.sleep(0.1)

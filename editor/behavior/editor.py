@@ -1,11 +1,11 @@
 from flask import jsonify, request
 from pathlib import Path
 from app import app
+import base64
 import shutil
 import time
 import os
 import re
-import base64
 
 class EditorBehavior():
   def __init__(self, data=None, args=None):
