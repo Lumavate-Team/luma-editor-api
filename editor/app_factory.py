@@ -23,7 +23,7 @@ def create_app():
           lang = 'python'
 
       if root:
-        if not os.path.isfile(root):
+        if not os.path.isdir(root):
           raise Exception("Invalid path provided for the project root")
       else:
         # Let's find the root by looking for our standard project struct
