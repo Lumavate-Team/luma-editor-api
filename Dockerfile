@@ -1,4 +1,4 @@
-FROM python:3.7.0-alpine
+FROM python:3.7-alpine3.9
 
 # Editor port
 EXPOSE 5001
