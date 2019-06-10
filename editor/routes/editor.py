@@ -20,8 +20,8 @@ def editor_core(ic, wt, root, path):
 
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/download/application.zip', methods=['GET'])
 def download_src(ic, wt):
-  b = EditorBehavior().download_src()
-  return send_file('/editor/application_src.zip', attachment_filename='application.zip', as_attachment=True)
+  data = EditorBehavior().get_app_archive()
+  return send_file(data, attachment_filename='application.zip', as_attachment=True, mimetype='application/zip')
 
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/package', methods=['POST', 'GET'])
 def project_packages(ic, wt):

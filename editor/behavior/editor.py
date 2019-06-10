@@ -6,6 +6,9 @@ import shutil
 import time
 import os
 import re
+import io
+import zipfile
+import pathlib
 
 class EditorBehavior():
   def __init__(self, data=None, args=None):
@@ -264,11 +267,18 @@ class EditorBehavior():
         os.remove(self.real_path)
       raise FSException("Error writing to path", payload={'path': self.editor_path, 'exception': str(e)})
 
-  def download_src(self):
+  def get_app_archive(self):
+    path = '/app'
     if self.proj_lang == 'go':
-      shutil.make_archive('/editor/application_src', 'zip', base_dir='/go/src')
-    else:
-      shutil.make_archive('/editor/application_src', 'zip', base_dir='/app')
+      path = '/go/src'
+
+    base_path = pathlib.Path(path)
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, mode='w') as z:
+      for f_name in base_path.iterdir():
+        z.write(f_name)
+    data.seek(0)
+    return data
 
 class FSException(Exception):
   def __init__(self, message, payload=None, status_code=500):
