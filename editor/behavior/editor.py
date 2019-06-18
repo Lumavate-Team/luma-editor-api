@@ -274,9 +274,12 @@ class EditorBehavior():
 
     base_path = pathlib.Path(path)
     data = io.BytesIO()
+
     with zipfile.ZipFile(data, mode='w') as z:
-      for f_name in base_path.iterdir():
-        z.write(f_name)
+    for root, _, files in os.walk(path):
+      for f in files:
+        z.write(os.path.join(root, f))
+
     data.seek(0)
     return data
 
