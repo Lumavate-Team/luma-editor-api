@@ -23,6 +23,11 @@ def download_src(ic, wt):
   data = EditorBehavior().get_app_archive()
   return send_file(data, attachment_filename='application.zip', as_attachment=True, mimetype='application/zip')
 
+@editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/version', methods=['GET'])
+def editor_info(ic, wt):
+  info = {'version': 1.0}
+  return info
+
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/package', methods=['POST', 'GET'])
 def project_packages(ic, wt):
   b = PackageBehavior()
@@ -52,7 +57,11 @@ def follow(tail):
   except:
     raise FSException("'tail' arg must be an int")
 
-  with open('/logs/app.log', 'r') as file:
+  file_path = '/logs/app.log'
+  if 'editor' in request.args:
+    file_path = '/logs/editor.log'
+
+  with open(file_path, 'r') as file:
     line = ''
     ct = 0
     while True:

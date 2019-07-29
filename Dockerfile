@@ -29,3 +29,6 @@ RUN mkdir -p /etc/supervisor/conf.d
 
 # Dir for supervisor & child logs
 RUN mkdir -p /logs
+
+# Defualt command to start supervisor
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
