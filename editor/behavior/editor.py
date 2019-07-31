@@ -276,9 +276,9 @@ class EditorBehavior():
     data = io.BytesIO()
 
     with zipfile.ZipFile(data, mode='w') as z:
-    for root, _, files in os.walk(path):
-      for f in files:
-        z.write(os.path.join(root, f))
+      for root, _, files in os.walk(path):
+        for f in files:
+          z.write(os.path.join(root, f))
 
     data.seek(0)
     return data

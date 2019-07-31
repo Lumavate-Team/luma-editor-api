@@ -45,11 +45,16 @@ def restart_process(ic, wt):
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/logs', methods=['GET'])
 def logs(ic, wt):
   tail_length = request.args.get('tail')
-  resp = Response(follow(tail_length), mimetype='text/plain')
+
+  editor=False
+  if 'editor' in request.args:
+    editor = True
+
+  resp = Response(follow(tail_length, editor), mimetype='text/plain')
   resp.headers['X-Accel-Buffering'] = 'no'
   return resp
 
-def follow(tail):
+def follow(tail, editor):
   if not tail:
     tail = 100
   try:
@@ -58,7 +63,7 @@ def follow(tail):
     raise FSException("'tail' arg must be an int")
 
   file_path = '/logs/app.log'
-  if 'editor' in request.args:
+  if editor:
     file_path = '/logs/editor.log'
 
   with open(file_path, 'r') as file:
