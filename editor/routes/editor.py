@@ -25,7 +25,7 @@ def download_src(ic, wt):
 
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/version', methods=['GET'])
 def editor_info(ic, wt):
-  info = {'version': 1.1.0, 'lastCommit': 'Rm the --reload flag from the editor gunicorn config;'}
+  info = {'version': '1.1.0', 'lastCommit': 'Rm the --reload flag from the editor gunicorn config;'}
   return info
 
 @editor_blueprint.route('/<string:ic>/<string:wt>/luma-editor/package', methods=['POST', 'GET'])
